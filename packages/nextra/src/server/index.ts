@@ -1,11 +1,12 @@
 /* eslint-env node */
-import { sep } from 'node:path'
+import path from 'node:path'
 import type { RuleSetRule } from 'webpack'
 import { fromZodError } from 'zod-validation-error'
 import type { Nextra } from '../types'
 import {
   DEFAULT_LOCALES,
-  MARKDOWN_EXTENSION_REGEX,
+  IS_PRODUCTION,
+  MARKDOWN_EXTENSION_RE,
   MARKDOWN_EXTENSIONS
 } from './constants.js'
 import { nextraConfigSchema } from './schemas.js'
@@ -14,9 +15,11 @@ import { NextraPlugin } from './webpack-plugins/index.js'
 
 const DEFAULT_EXTENSIONS = ['js', 'jsx', 'ts', 'tsx']
 
-const AGNOSTIC_PAGE_MAP_PATH = `.next${sep}static${sep}chunks${sep}nextra-page-map`
+const SEP_RE = path.sep === '/' ? '/' : '\\\\'
 
-const RE_SEP = sep === '/' ? '/' : '\\\\'
+const PAGE_MAP_RE = new RegExp(
+  `.next${SEP_RE}static${SEP_RE}chunks${SEP_RE}nextra-page-map`
+)
 
 const nextra: Nextra = nextraConfig => {
   const { error, data: loaderOptions } =
@@ -25,12 +28,13 @@ const nextra: Nextra = nextraConfig => {
     logger.error('Error validating nextraConfig')
     throw fromZodError(error)
   }
+
   return function withNextra(nextConfig = {}) {
     const hasI18n = !!nextConfig.i18n?.locales
 
     if (hasI18n) {
       logger.info(
-        'You have Next.js i18n enabled, read here https://nextjs.org/docs/advanced-features/i18n-routing for the docs.'
+        'You have Next.js i18n enabled, read here https://nextjs.org/docs/app/building-your-application/routing/internationalization for the docs.'
       )
     }
 
@@ -54,16 +58,16 @@ const nextra: Nextra = nextraConfig => {
         i18n: undefined,
         env: {
           ...nextConfig.env,
-          NEXTRA_DEFAULT_LOCALE: nextConfig.i18n?.defaultLocale || 'en'
+          NEXTRA_DEFAULT_LOCALE: nextConfig.i18n?.defaultLocale || 'en',
+          NEXTRA_LOCALES: JSON.stringify(nextConfig.i18n?.locales)
         }
       }),
       webpack(config, options) {
         if (options.nextRuntime !== 'edge' && options.isServer) {
-          config.plugins ||= []
           config.plugins.push(
             new NextraPlugin({
               locales: nextConfig.i18n?.locales || DEFAULT_LOCALES,
-              mdxBaseDir: loaderOptions.mdxBaseDir
+              useContentDir: loaderOptions.useContentDir
               // transformPageMap: nextraConfig.transformPageMap
             })
           )
@@ -80,60 +84,55 @@ const nextra: Nextra = nextraConfig => {
             )
           }
         }
-
-        const rules = config.module.rules as RuleSetRule[]
-
-        const defaultLoaderOptions = [
-          options.defaultLoaders.babel,
-          {
-            loader: 'nextra/loader',
-            options: loaderOptions
-          }
+        config.resolve.alias['next-mdx-import-source-file'] = [
+          'private-next-root-dir/src/mdx-components',
+          'private-next-root-dir/mdx-components',
+          'nextra/mdx'
         ]
-
-        rules.push(
-          {
-            test: MARKDOWN_EXTENSION_REGEX,
-            oneOf: [
-              {
-                issuer: request => request?.includes(AGNOSTIC_PAGE_MAP_PATH),
-                use: [
-                  options.defaultLoaders.babel,
+        config.module.rules.push({
+          test: MARKDOWN_EXTENSION_RE,
+          oneOf: [
+            ...(IS_PRODUCTION
+              ? []
+              : [
                   {
-                    loader: 'nextra/loader',
-                    options: { ...loaderOptions, isPageMapImport: true }
+                    issuer: PAGE_MAP_RE,
+                    use: [
+                      options.defaultLoaders.babel,
+                      {
+                        loader: 'nextra/loader',
+                        options: { ...loaderOptions, isPageMapImport: true }
+                      }
+                    ]
                   }
-                ]
-              },
-              {
-                // Match pages (imports without an issuer request).
-                issuer: request => request === '',
-                use: [
-                  options.defaultLoaders.babel,
-                  {
-                    loader: 'nextra/loader',
-                    options: { ...loaderOptions, isPageImport: true }
-                  }
-                ]
-              },
-              {
-                // Match Markdown imports from non-pages. These imports have an
-                // issuer, which can be anything as long as it's not empty string.
-                // When the issuer is `null`, it means that it can be imported via a
-                // runtime import call such as `import('...')`.
-                issuer: request => request === null || !!request,
-                use: defaultLoaderOptions
-              }
-            ]
-          },
-          {
-            test: new RegExp(
-              `@typescript${RE_SEP}vfs${RE_SEP}dist${RE_SEP}vfs\\.`
-            ),
-            issuer: request => !!request,
-            use: defaultLoaderOptions
-          }
-        )
+                ]),
+            {
+              // Match pages (imports without an issuer request).
+              issuer: request => request === '',
+              use: [
+                options.defaultLoaders.babel,
+                {
+                  loader: 'nextra/loader',
+                  options: { ...loaderOptions, isPageImport: true }
+                }
+              ]
+            },
+            {
+              // Match Markdown imports from non-pages. These imports have an
+              // issuer, which can be anything as long as it's not empty string.
+              // When the issuer is `null`, it means that it can be imported via a
+              // runtime import call such as `import('...')`.
+              issuer: request => request === null || !!request,
+              use: [
+                options.defaultLoaders.babel,
+                {
+                  loader: 'nextra/loader',
+                  options: loaderOptions
+                }
+              ]
+            }
+          ]
+        } satisfies RuleSetRule)
 
         return nextConfig.webpack?.(config, options) || config
       }

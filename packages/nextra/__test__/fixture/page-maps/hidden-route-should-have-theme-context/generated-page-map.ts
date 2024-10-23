@@ -14,11 +14,11 @@ const _pageMap = [{
     name: "2-level",
     route: "/1-level/2-level",
     children: [{
+      data: _1_level_2_level_meta
+    }, {
       name: "foo",
       route: "/1-level/2-level/foo",
       frontMatter: _1_level_2_level_foo
-    }, {
-      data: _1_level_2_level_meta
     }]
   }, {
     name: "qux",
@@ -31,11 +31,10 @@ const _pageMap = [{
   frontMatter: bar
 }];
 
-  
 export const pageMap = normalizePageMap(_pageMap)
 
 export const RouteToFilepath = {
-  "bar": "bar.md",
+  "1-level/2-level/foo": "1-level/2-level/foo.md",
   "1-level/qux": "1-level/qux.md",
-  "1-level/2-level/foo": "1-level/2-level/foo.md"
+  "bar": "bar.md"
 }

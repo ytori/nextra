@@ -3,7 +3,7 @@ import type { ArrayExpression, ImportDeclaration } from 'estree'
 import { toJs } from 'estree-util-to-js'
 import slash from 'slash'
 import type { PageMapItem } from '../types'
-import { CHUNKS_DIR, META_REGEX } from './constants.js'
+import { META_RE } from './constants.js'
 import { APP_DIR } from './file-system.js'
 import { createAstObject } from './utils.js'
 
@@ -22,7 +22,7 @@ function cleanFileName(name: string): string {
   return (
     path
       .relative(APP_DIR, name)
-      .replace(/\.([jt]sx?|json|mdx?)$/, '')
+      .replace(/\.([jt]sx?|mdx?)$/, '')
       .replaceAll(/[\W_]+/g, '_')
       .replace(/^_/, '')
       // Variable can't start with number
@@ -74,15 +74,13 @@ function convertPageMapToAst(
  * https://github.com/nodejs/node/issues/31710
  */
 function getImportPath(filePaths: string[], fromAppDir = false): string {
-  const importPath = slash(
-    path.relative(
-      CHUNKS_DIR,
-      fromAppDir
-        ? path.join(APP_DIR, ...filePaths)
-        : path.join(process.cwd(), 'mdx', ...filePaths)
-    )
+  const importPath = path.join(
+    ...(fromAppDir
+      ? ['private-next-app-dir']
+      : ['private-next-root-dir', 'content']),
+    ...filePaths
   )
-  return importPath.startsWith('.') ? importPath : `./${importPath}`
+  return slash(importPath)
 }
 
 export async function collectPageMap({
@@ -118,7 +116,7 @@ export async function collectPageMap({
       specifiers: [
         {
           local: { type: 'Identifier', name: importName },
-          ...(META_REGEX.test(filePath)
+          ...(META_RE.test(filePath)
             ? { type: 'ImportDefaultSpecifier' }
             : {
                 type: 'ImportSpecifier',
@@ -128,31 +126,37 @@ export async function collectPageMap({
       ]
     }))
 
-  const body: Parameters<typeof toJs>[0]['body'] = [
-    ...metaImportsAST,
-    {
-      type: 'VariableDeclaration',
-      kind: 'const',
-      declarations: [
-        {
-          type: 'VariableDeclarator',
-          id: { type: 'Identifier', name: '_pageMap' },
-          init: pageMapAst
-        }
-      ]
-    }
-  ]
-
-  const result = toJs({
+  const pageMapResult = toJs({
     type: 'Program',
     sourceType: 'module',
-    body
+    body: [
+      ...metaImportsAST,
+      {
+        type: 'VariableDeclaration',
+        kind: 'const',
+        declarations: [
+          {
+            type: 'VariableDeclarator',
+            id: { type: 'Identifier', name: '_pageMap' },
+            init: pageMapAst
+          }
+        ]
+      }
+    ]
   })
 
-  return `import { normalizePageMap } from 'nextra/page-map'
-${result.value}
-  
+  const rawJs = `import { normalizePageMap } from 'nextra/page-map'
+${pageMapResult.value}
 export const pageMap = normalizePageMap(_pageMap)
 
-export const RouteToFilepath = ${JSON.stringify(mdxPages, null, 2)}`
+export const RouteToFilepath = ${JSON.stringify(mdxPages, null, 2)}
+`
+  return rawJs
+}
+
+export async function getPageMap(locale = '') {
+  const { pageMap } = await import(
+    `private-dot-next/static/chunks/nextra-page-map-${locale}.mjs`
+  )
+  return pageMap
 }

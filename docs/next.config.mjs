@@ -1,31 +1,17 @@
-import path from 'node:path'
 import nextra from 'nextra'
 
-/**
- * @type {import('nextra').NextraConfig}
- */
 const withNextra = nextra({
-  mdxOptions: {
-    providerImportSource: 'nextra-theme-docs'
-  },
   latex: true,
   defaultShowCopyCode: true
 })
 
-const sep = path.sep === '/' ? '/' : '\\\\'
-
-const ALLOWED_SVG_REGEX = new RegExp(`components${sep}icons${sep}.+\\.svg$`)
-
-/**
- * @type {import('next').NextConfig}
- */
-export default withNextra({
+const nextConfig = withNextra({
   reactStrictMode: true,
   eslint: {
     // ESLint behaves weirdly in this monorepo.
     ignoreDuringBuilds: true
   },
-  redirects: () => [
+  redirects: async () => [
     {
       source: '/docs/guide/:slug(typescript|latex|tailwind-css|mermaid)',
       destination: '/docs/guide/advanced/:slug',
@@ -48,27 +34,28 @@ export default withNextra({
     }
   ],
   webpack(config) {
-    const fileLoaderRule = config.module.rules.find(rule =>
-      rule.test?.test?.('.svg')
+    // rule.exclude doesn't work starting from Next.js 15
+    const { test: _test, ...imageLoaderOptions } = config.module.rules.find(
+      rule => rule.test?.test?.('.svg')
     )
-    fileLoaderRule.exclude = ALLOWED_SVG_REGEX
-
     config.module.rules.push({
-      test: ALLOWED_SVG_REGEX,
-      use: [
+      test: /\.svg$/,
+      oneOf: [
         {
-          loader: '@svgr/webpack',
-          options: {
-            svgoConfig: {
-              plugins: ['removeXMLNS']
-            }
-          }
-        }
+          resourceQuery: /svgr/,
+          use: ['@svgr/webpack']
+        },
+        imageLoaderOptions
       ]
     })
     return config
   },
   experimental: {
-    optimizePackageImports: ['@components/icons', 'nextra/components']
+    optimizePackageImports: [
+      // '@components/icons',
+      'nextra/components'
+    ]
   }
 })
+
+export default nextConfig

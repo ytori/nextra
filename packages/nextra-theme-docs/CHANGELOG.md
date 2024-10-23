@@ -1,5 +1,99 @@
 # nextra-theme-docs
 
+## 4.0.0-app-router.12
+
+### Patch Changes
+
+- b8defc9: sync with nextra 3.1.0
+- b8defc9: remove `NormalizedResult.flatDirectories`
+
+  remove `Item.withIndexPage`, use `'frontMatter' in Item`
+
+- Updated dependencies [b8defc9]
+- Updated dependencies [b8defc9]
+  - nextra@4.0.0-app-router.12
+
+## 4.0.0-app-router.11
+
+### Patch Changes
+
+- be15165: move `pagefind` output to `public/_pagefind` directory
+  https://github.com/shuding/nextra/pull/3517
+- Updated dependencies [be15165]
+  - nextra@4.0.0-app-router.11
+
+## 4.0.0-app-router.10
+
+### Patch Changes
+
+- 8b1a7c9: defer pagefind results update for prioritizing the user input state
+- Updated dependencies [8b1a7c9]
+  - nextra@4.0.0-app-router.10
+
+## 4.0.0-app-router.9
+
+### Patch Changes
+
+- 2c8a8ab: - sync with nextra 3.0.15
+
+  - bump to Next 15
+  - remove importing of `style.css` in themes, you need to import now manually
+    by
+
+  ```js
+  import 'nextra-theme-docs/style.css' // for docs theme
+  import 'nextra-theme-blog/style.css' // for blog theme
+  ```
+
+- Updated dependencies [2c8a8ab]
+  - nextra@4.0.0-app-router.9
+
+## 4.0.0-app-router.8
+
+### Patch Changes
+
+- 3ce535b: Add aria attrs to the sidebar collapse button
+- 9832af9: add ↗ char for external links
+- ec39959: Use `primaryColor` for `::selection` styles
+- 875842b: support `GitHub Alert Syntax`
+- 47c62c8: fix click on the arrow icon in the folder item in the Sidebar, was
+  always consider clicked on `<a>` or `<button>` due `event.currentTarget`
+- Updated dependencies [9832af9]
+- Updated dependencies [ec39959]
+- Updated dependencies [875842b]
+  - nextra@4.0.0-app-router.8
+
+## 4.0.0-app-router.7
+
+### Patch Changes
+
+- 5201e5f: add helpful error message about not available search on development
+  mode
+- 3ac2c32: add `getPageMap` helper function from `nextra/page-map`
+- b4ca36d: - allow override/add additional icons for code blocks
+  - remove `nextraConfig.mdxOptions.providerImportSource` option in favour of
+    `mdx-components` file
+- 73726ec: - Simplify the class-name of the sidebar file item
+  - fix unclosable active folder when it's `<button>` element and not `<a>`
+  - improve `<Collapse>` to add inner `<div>` only if children != 1
+- 4768dee: replace `nextraConfig.mdxBaseDir: string` by `useContentDir: boolean`
+- Updated dependencies [5201e5f]
+- Updated dependencies [3ac2c32]
+- Updated dependencies [b4ca36d]
+- Updated dependencies [4768dee]
+  - nextra@4.0.0-app-router.7
+
+## 4.0.0-app-router.6
+
+### Patch Changes
+
+- 2092d5e: enable page reload of catch-all routes `app/[[...slug]].jsx` on
+  content change
+- a97e5cf: sync with nextra 3.0.10
+- Updated dependencies [2092d5e]
+- Updated dependencies [a97e5cf]
+  - nextra@4.0.0-app-router.6
+
 ## 4.0.0-app-router.5
 
 ### Patch Changes
@@ -126,6 +220,156 @@
 
 - Updated dependencies [99f34d3]
   - nextra@4.0.0-app-router.0
+
+## 3.1.0
+
+### Minor Changes
+
+- 8e9767e: `activeType` should be initialized from `meta['*']`
+- fec399a: fix `type: 'separator'`, `type: 'menu'` and `item` with `href` not
+  respecting order when not all pages specified in `_meta` file
+
+### Patch Changes
+
+- 035fe48: - fix empty dropdown menu when \_meta item with `type: "menu"`
+  contains items with local pages
+- c002118: - add tests for should respect order for `type: "separator"`,
+  `type: "menu"` and item with `href`
+- Updated dependencies [035fe48]
+- Updated dependencies [8e9767e]
+- Updated dependencies [fec399a]
+- Updated dependencies [c002118]
+  - nextra@3.1.0
+
+## 3.1.0-canary.1
+
+### Minor Changes
+
+- 8e9767e: `activeType` should be initialized from `meta['*']`
+
+### Patch Changes
+
+- 035fe48: - fix empty dropdown menu when \_meta item with `type: "menu"`
+  contains items with local pages
+- c002118: - add tests for should respect order for `type: "separator"`,
+  `type: "menu"` and item with `href`
+- Updated dependencies [035fe48]
+- Updated dependencies [8e9767e]
+- Updated dependencies [c002118]
+  - nextra@3.1.0-canary.1
+
+## 3.1.0-canary.0
+
+### Minor Changes
+
+- fec399a: fix `type: 'separator'`, `type: 'menu'` and `item` with `href` not
+  respecting order when not all pages specified in `_meta` file
+
+### Patch Changes
+
+- Updated dependencies [fec399a]
+  - nextra@3.1.0-canary.0
+
+## 3.0.15
+
+### Patch Changes
+
+- Updated dependencies [bd498c6]
+  - nextra@3.0.15
+
+## 3.0.14
+
+### Patch Changes
+
+- 9794e9e: Fix `frontMatter.sidebarTitle` didn't affect without
+  `frontMatter.title` set
+
+  now priority for sidebar title is:
+
+  1. `title` property from `_meta` file
+  1. `frontMatter.sidebarTitle`
+  1. `frontMatter.title`
+  1. formatted with [Title](https://title.sh) based on filename
+
+- Updated dependencies [6454938]
+- Updated dependencies [9794e9e]
+- Updated dependencies [9794e9e]
+  - nextra@3.0.14
+
+## 3.0.13
+
+### Patch Changes
+
+- f1815ac: From an accessibility POV (WCAG G13) there's a need of additional
+  visual differentiation factor for hovers. Article achieves this but mdx
+  doesn't.
+
+  So changing the mdx link behaviour so on hover the underline disappears.
+
+  - nextra@3.0.13
+
+## 3.0.12
+
+### Patch Changes
+
+- 7e0093f: Fix `nextra/locales` middleware, redirect to the docs URL relative to
+  the `/<basePath>`.
+- Updated dependencies [7e0093f]
+  - nextra@3.0.12
+
+## 3.0.11
+
+### Patch Changes
+
+- Updated dependencies [e0a9303]
+  - nextra@3.0.11
+
+## 3.0.10
+
+### Patch Changes
+
+- Updated dependencies [31de764]
+- Updated dependencies [161d350]
+  - nextra@3.0.10
+
+## 3.0.9
+
+### Patch Changes
+
+- Updated dependencies [f9cc160]
+  - nextra@3.0.9
+
+## 3.0.8
+
+### Patch Changes
+
+- 72c84eb: add `max-md:_overflow-hidden` instead of `_overflow-hidden` when
+  hamburger is clicked
+- 1530239: hide `<summary>` marker on Safari
+- 210d68a: trigger scrolling when the TOC item is outside the viewport
+- bf04f96: add ring-inset for navbar links
+  - nextra@3.0.8
+
+## 3.0.7
+
+### Patch Changes
+
+- Updated dependencies [4bbc1fe]
+  - nextra@3.0.7
+
+## 3.0.6
+
+### Patch Changes
+
+- 4ed7b4b: remove extra horizontal margin spacing in toc
+  - nextra@3.0.6
+
+## 3.0.5
+
+### Patch Changes
+
+- 3aac732: Add `.nextra-search-results` class back
+  - nextra@3.0.5
 
 ## 3.0.4
 

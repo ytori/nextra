@@ -1,5 +1,5 @@
-import { Link } from 'next-view-transitions'
 import {
+  Callout,
   Code,
   Details,
   Pre,
@@ -8,26 +8,20 @@ import {
   Td,
   Th,
   Tr,
+  withGitHubAlert,
   withIcons
 } from 'nextra/components'
-import type { UseMDXComponents } from 'nextra/mdx'
-import { DEFAULT_COMPONENTS } from 'nextra/mdx'
-import type { ComponentProps } from 'react'
+import { useMDXComponents as getNextraMDXComponents } from 'nextra/mdx'
+import type { MDXComponents } from 'nextra/mdx'
+import type { ComponentProps, FC } from 'react'
 import { Meta } from './components/meta'
+import { isValidDate } from './is-valid-date'
+import type { BlogMetadata } from './types'
 
-const DATE_REGEX = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?(:\d{2}\.\d{3}Z)?$/
-const DATE_REGEX_WITH_SLASH = /^\d{4}\/\d{1,2}\/\d{1,2}( \d{1,2}:\d{1,2})?$/
-
-export const isValidDate = (date: string): boolean =>
-  DATE_REGEX.test(date) || DATE_REGEX_WITH_SLASH.test(date)
-
-const createHeading = (Tag: `h${2 | 3 | 4 | 5 | 6}`) =>
-  function HeadingLink({
-    children,
-    id,
-    className,
-    ...props
-  }: ComponentProps<typeof Tag>) {
+const createHeading = (
+  Tag: `h${2 | 3 | 4 | 5 | 6}`
+): FC<ComponentProps<typeof Tag>> =>
+  function HeadingLink({ children, id, className, ...props }) {
     return (
       <Tag
         id={id}
@@ -46,57 +40,70 @@ const createHeading = (Tag: `h${2 | 3 | 4 | 5 | 6}`) =>
       </Tag>
     )
   }
+const Blockquote = withGitHubAlert(({ type, ...props }) => {
+  const calloutType = (
+    {
+      caution: 'error',
+      important: 'error', // TODO
+      note: 'info',
+      tip: 'default',
+      warning: 'warning'
+    } as const
+  )[type]
 
-const EXTERNAL_HREF_REGEX = /^https?:\/\//
+  return <Callout type={calloutType} {...props} />
+})
+
+type BlogMDXComponents = Readonly<
+  MDXComponents & {
+    DateFormatter?: FC<{ date: Date }>
+  }
+>
+
+const DEFAULT_COMPONENTS = getNextraMDXComponents()
 
 /* eslint sort-keys: error */
-export const useMDXComponents: UseMDXComponents = components => ({
-  ...DEFAULT_COMPONENTS,
-  a({ href = '', ...props }) {
-    if (EXTERNAL_HREF_REGEX.test(href)) {
-      return <a href={href} target="_blank" rel="noreferrer" {...props} />
-    }
-    const ComponentToUse = href.startsWith('#') ? 'a' : Link
-    return <ComponentToUse href={href} {...props} />
-  },
-  code: Code,
-  details: Details,
-  h2: createHeading('h2'),
-  h3: createHeading('h3'),
-  h4: createHeading('h4'),
-  h5: createHeading('h5'),
-  h6: createHeading('h6'),
-  pre: withIcons(Pre),
-  summary: Summary,
-  table: Table,
-  td: Td,
-  th: Th,
-  tr: Tr,
-  wrapper({ children, metadata, title }) {
-    if (metadata.date && !isValidDate(metadata.date)) {
-      throw new Error(
-        `Invalid date "${metadata.date}". Provide date in "YYYY/M/D", "YYYY/M/D H:m", "YYYY-MM-DD", "[YYYY-MM-DD]T[HH:mm]" or "[YYYY-MM-DD]T[HH:mm:ss.SSS]Z" format.`
+export const useMDXComponents = (components: BlogMDXComponents = {}) =>
+  ({
+    ...DEFAULT_COMPONENTS,
+    blockquote: Blockquote,
+    code: Code,
+    details: Details,
+    h2: createHeading('h2'),
+    h3: createHeading('h3'),
+    h4: createHeading('h4'),
+    h5: createHeading('h5'),
+    h6: createHeading('h6'),
+    pre: withIcons(Pre),
+    summary: Summary,
+    table: Table,
+    td: Td,
+    th: Th,
+    tr: Tr,
+    wrapper({ children, metadata, title }) {
+      const date = (metadata as any).date as string
+      if (date && !isValidDate(date)) {
+        throw new Error(
+          `Invalid date "${date}". Provide date in "YYYY/M/D", "YYYY/M/D H:m", "YYYY-MM-DD", "[YYYY-MM-DD]T[HH:mm]" or "[YYYY-MM-DD]T[HH:mm:ss.SSS]Z" format.`
+        )
+      }
+      const dateObj = date && new Date(date)
+      const { DateFormatter } = components
+
+      return (
+        <>
+          <h1>{title}</h1>
+          <Meta {...(metadata as BlogMetadata)}>
+            {dateObj && (
+              <time dateTime={dateObj.toISOString()}>
+                {(DateFormatter && <DateFormatter date={dateObj} />) ||
+                  dateObj.toLocaleDateString()}
+              </time>
+            )}
+          </Meta>
+          {children}
+        </>
       )
-    }
-    const dateObj = metadata.date && new Date(metadata.date)
-
-    // @ts-expect-error
-    const DateFormatter = components?.DateFormatter
-
-    return (
-      <>
-        <h1>{title}</h1>
-        <Meta {...metadata}>
-          {dateObj && (
-            <time dateTime={dateObj.toISOString()}>
-              {(DateFormatter && <DateFormatter date={dateObj} />) ||
-                dateObj.toLocaleDateString()}
-            </time>
-          )}
-        </Meta>
-        {children}
-      </>
-    )
-  },
-  ...components
-})
+    },
+    ...components
+  }) satisfies BlogMDXComponents

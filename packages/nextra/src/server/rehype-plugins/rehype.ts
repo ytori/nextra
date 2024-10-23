@@ -11,7 +11,7 @@ type PreElement = Element & {
   __hasWordWrap?: boolean
 }
 
-const CODE_BLOCK_FILENAME_REGEX = /filename="([^"]+)"/
+const CODE_BLOCK_FILENAME_RE = /filename="([^"]+)"/
 
 export const DEFAULT_REHYPE_PRETTY_CODE_OPTIONS: RehypePrettyCodeOptions = {
   keepBackground: false,
@@ -39,7 +39,7 @@ export const DEFAULT_REHYPE_PRETTY_CODE_OPTIONS: RehypePrettyCodeOptions = {
       langs: Object.keys(bundledLanguages)
     })
   },
-  filterMetaString: meta => meta.replace(CODE_BLOCK_FILENAME_REGEX, '')
+  filterMetaString: meta => meta.replace(CODE_BLOCK_FILENAME_RE, '')
 }
 
 export const rehypeParseCodeMeta: Plugin<
@@ -52,7 +52,7 @@ export const rehypeParseCodeMeta: Plugin<
       const [codeEl] = node.children as Element[]
       const { meta = '' } = codeEl.data || {}
 
-      node.__filename = meta!.match(CODE_BLOCK_FILENAME_REGEX)?.[1]
+      node.__filename = meta!.match(CODE_BLOCK_FILENAME_RE)?.[1]
       node.properties['data-filename'] = node.__filename
 
       node.__hasWordWrap = !meta!.includes('word-wrap=false')
@@ -87,8 +87,8 @@ export const rehypeAttachCodeMeta: Plugin<
 
         if (!isRehypePrettyCode) return
 
-        // remove <figure data-rehype-pretty-code-figure /> element that wraps <pre /> element
-        // because we'll wrap with our own <div />
+        // remove <figure data-rehype-pretty-code-figure> element that wraps <pre> element
+        // because we'll wrap with our own <div>
         const preEl: PreElement = Object.assign(node, node.children[0])
         delete preEl.properties['data-theme']
 

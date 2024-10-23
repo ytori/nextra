@@ -7,8 +7,8 @@ import { Button, Collapse } from 'nextra/components'
 import { useFSRoute } from 'nextra/hooks'
 import { ArrowRightIcon, ExpandIcon } from 'nextra/icons'
 import type { Item, MenuItem, PageItem } from 'nextra/normalize-pages'
-import type { FocusEventHandler, ReactElement } from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import type { FC, FocusEventHandler, MouseEventHandler } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import scrollIntoView from 'scroll-into-view-if-needed'
 import {
   setFocusedRoute,
@@ -41,11 +41,11 @@ const classes = {
     '_bg-primary-100 _font-semibold _text-primary-800 dark:_bg-primary-400/10 dark:_text-primary-600',
     'contrast-more:_border-primary-500 contrast-more:dark:_border-primary-500'
   ),
-  list: cn('_flex _flex-col _gap-1'),
+  list: cn('_grid _gap-1'),
   border: cn(
     '_relative before:_absolute before:_inset-y-1',
     'before:_w-px before:_bg-gray-200 before:_content-[""] dark:before:_bg-neutral-800',
-    '_ps-3 before:_start-0'
+    '_ps-3 before:_start-0 _pt-1 _ms-3'
   ),
   aside: cn(
     'nextra-sidebar _flex _flex-col',
@@ -71,7 +71,7 @@ type FolderProps = {
   level: number
 }
 
-function Folder({ item, anchors, onFocus, level }: FolderProps): ReactElement {
+const Folder: FC<FolderProps> = ({ item, anchors, onFocus, level }) => {
   const routeOriginal = useFSRoute()
   const [route] = routeOriginal.split('#')
   const hasRoute = !!item.route // for item.type === 'menu' will be ''
@@ -95,7 +95,21 @@ function Folder({ item, anchors, onFocus, level }: FolderProps): ReactElement {
           : level < themeConfig.sidebar.defaultMenuCollapseLevel)
       : TreeState[item.route] || focusedRouteInside
 
-  const rerender = useState({})[1]
+  const [, rerender] = useState<object>()
+
+  const onClick: MouseEventHandler = useCallback(event => {
+    const el = event.currentTarget
+    const isClickOnIcon =
+      el /* will be always <a> or <button> */ !==
+      event.target /* can be <svg> or <path> */
+    if (isClickOnIcon) {
+      event.preventDefault()
+    }
+    const isOpen = el.hasAttribute('data-open')
+    const route = el.getAttribute('href') || el.getAttribute('data-href')!
+    TreeState[route] = !isOpen
+    rerender({})
+  }, [])
 
   useEffect(() => {
     function updateTreeState() {
@@ -141,7 +155,7 @@ function Folder({ item, anchors, onFocus, level }: FolderProps): ReactElement {
     })
   }
 
-  const isLink = 'withIndexPage' in item && item.withIndexPage
+  const isLink = 'frontMatter' in item
   // use button when link don't have href because it impacts on SEO
   const ComponentToUse = isLink ? Anchor : Button
 
@@ -156,27 +170,8 @@ function Folder({ item, anchors, onFocus, level }: FolderProps): ReactElement {
           classes.link,
           active ? classes.active : classes.inactive
         )}
-        onClick={event => {
-          const clickedToggleIcon = ['svg', 'path'].includes(
-            event.currentTarget.tagName.toLowerCase()
-          )
-          if (clickedToggleIcon) {
-            event.preventDefault()
-          }
-          if (isLink) {
-            // If it's focused, we toggle it. Otherwise, always open it.
-            if (active || clickedToggleIcon) {
-              TreeState[item.route] = !open
-            } else {
-              TreeState[item.route] = true
-            }
-            rerender({})
-            return
-          }
-          if (active) return
-          TreeState[item.route] = !open
-          rerender({})
-        }}
+        data-open={open ? '' : undefined}
+        onClick={onClick}
         onFocus={onFocus}
       >
         {item.title}
@@ -193,9 +188,8 @@ function Folder({ item, anchors, onFocus, level }: FolderProps): ReactElement {
       {Array.isArray(item.children) && (
         <Collapse isOpen={open}>
           <Menu
-            className={cn(classes.border, '_pt-1 _ms-3')}
+            className={classes.border}
             directories={item.children}
-            base={item.route}
             anchors={anchors}
             level={level}
           />
@@ -205,7 +199,7 @@ function Folder({ item, anchors, onFocus, level }: FolderProps): ReactElement {
   )
 }
 
-function Separator({ title }: { title: string }): ReactElement {
+const Separator: FC<{ title: string }> = ({ title }) => {
   return (
     <li
       className={cn(
@@ -226,17 +220,13 @@ const handleClick = () => {
   setMenu(false)
 }
 
-function File({
-  item,
-  anchors,
-  onFocus
-}: {
+const File: FC<{
   item: PageItem | Item
   anchors: Heading[]
   onFocus: FocusEventHandler
-}): ReactElement {
+}> = ({ item, anchors, onFocus }) => {
   const route = useFSRoute()
-  // It is possible that the item doesn't have any route - for example an external link.
+  // It is possible that the item doesn't have any route - for example, an external link.
   const active = item.route && [route, route + '/'].includes(item.route + '/')
   const activeSlug = useActiveAnchor()
 
@@ -245,7 +235,7 @@ function File({
   }
 
   return (
-    <li className={cn(classes.list, { active })}>
+    <li className={cn({ active })}>
       <Anchor
         href={(item as PageItem).href || item.route}
         newWindow={(item as PageItem).newWindow}
@@ -255,7 +245,7 @@ function File({
         {item.title}
       </Anchor>
       {active && anchors.length > 0 && (
-        <ul className={cn(classes.list, classes.border, '_ms-3')}>
+        <ul className={cn(classes.list, classes.border)}>
           {anchors.map(({ id, value }) => (
             <li key={id}>
               <a
@@ -280,7 +270,6 @@ function File({
 interface MenuProps {
   directories: PageItem[] | Item[]
   anchors: Heading[]
-  base?: string
   className?: string
   onlyCurrentDocs?: boolean
   level: number
@@ -288,19 +277,17 @@ interface MenuProps {
 
 const handleFocus: FocusEventHandler = event => {
   const route =
-    event.target.getAttribute('href') ||
-    event.target.getAttribute('data-href') ||
-    ''
+    event.target.getAttribute('href') || event.target.getAttribute('data-href')!
   setFocusedRoute(route)
 }
 
-function Menu({
+const Menu: FC<MenuProps> = ({
   directories,
   anchors,
   className,
   onlyCurrentDocs,
   level
-}: MenuProps): ReactElement {
+}) => {
   return (
     <ul className={cn(classes.list, className)}>
       {directories.map(item => {
@@ -308,7 +295,7 @@ function Menu({
 
         const ComponentToUse =
           item.type === 'menu' ||
-          (item.children && (item.children.length || !item.withIndexPage))
+          (item.children && (item.children.length || !('frontMatter' in item)))
             ? Folder
             : File
 
@@ -326,7 +313,7 @@ function Menu({
   )
 }
 
-export function MobileNav() {
+export const MobileNav: FC = () => {
   const { directories } = useConfig().normalizePagesResult
   const toc = useToc()
 
@@ -363,7 +350,7 @@ export function MobileNav() {
         className={cn(
           '[transition:background-color_1.5s_ease]',
           menu
-            ? 'max-md:_bg-black/80 max-md:dark:_bg-black/60 _fixed _inset-0 _z-10'
+            ? '_bg-black/80 dark:_bg-black/60 _fixed _inset-0 _z-10 md:_hidden'
             : '_bg-transparent'
         )}
       />
@@ -415,12 +402,12 @@ export function MobileNav() {
   )
 }
 
-export function Sidebar({ toc }: { toc: Heading[] }): ReactElement {
+export const Sidebar: FC<{ toc: Heading[] }> = ({ toc }) => {
   const { normalizePagesResult, hideSidebar } = useConfig()
-  const [showSidebar, setSidebar] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(true)
   const [showToggleAnimation, setToggleAnimation] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
-  const anchors = useMemo(() => toc.filter(v => v.depth === 2), [toc])
+  const sidebarControlsId = useId()
 
   const { docsDirectories, activeThemeContext } = normalizePagesResult
   const includePlaceholder = activeThemeContext.layout === 'default'
@@ -439,6 +426,13 @@ export function Sidebar({ toc }: { toc: Heading[] }): ReactElement {
   }, [])
 
   const themeConfig = useThemeConfig()
+  const anchors = useMemo(
+    () =>
+      // When the viewport size is larger than `md`, hide the anchors in
+      // the sidebar when `floatTOC` is enabled.
+      themeConfig.toc.float ? [] : toc.filter(v => v.depth === 2),
+    [themeConfig.toc.float, toc]
+  )
   const hasI18n = themeConfig.i18n.length > 0
   const hasMenu =
     themeConfig.darkMode || hasI18n || themeConfig.sidebar.toggleButton
@@ -449,31 +443,30 @@ export function Sidebar({ toc }: { toc: Heading[] }): ReactElement {
         <div className="max-xl:_hidden _h-0 _w-64 _shrink-0" />
       )}
       <aside
+        id={sidebarControlsId}
         className={cn(
           classes.aside,
           'max-md:_hidden',
           '_top-[--nextra-navbar-height] _shrink-0',
-          showSidebar ? '_w-64' : '_w-20',
+          isExpanded ? '_w-64' : '_w-20',
           hideSidebar ? '_hidden' : '_sticky _self-start'
         )}
       >
         <div
           className={cn(
             classes.wrapper,
-            showSidebar ? 'nextra-scrollbar' : 'no-scrollbar'
+            isExpanded ? 'nextra-scrollbar' : 'no-scrollbar'
           )}
           ref={sidebarRef}
         >
-          {/* without asPopover check <Collapse />'s inner.clientWidth on `layout: "raw"` will be 0 and element will not have width on initial loading */}
-          {(!hideSidebar || !showSidebar) && (
-            <Collapse isOpen={showSidebar} horizontal>
+          {/* without !hideSidebar check <Collapse />'s inner.clientWidth on `layout: "raw"` will be 0 and element will not have width on initial loading */}
+          {(!hideSidebar || !isExpanded) && (
+            <Collapse isOpen={isExpanded} horizontal>
               <Menu
                 className="nextra-menu-desktop"
                 // The sidebar menu, shows only the docs directories.
                 directories={docsDirectories}
-                // When the viewport size is larger than `md`, hide the anchors in
-                // the sidebar when `floatTOC` is enabled.
-                anchors={themeConfig.toc.float ? [] : anchors}
+                anchors={anchors}
                 onlyCurrentDocs
                 level={0}
               />
@@ -485,28 +478,30 @@ export function Sidebar({ toc }: { toc: Heading[] }): ReactElement {
           <div
             className={cn(
               classes.bottomMenu,
-              showSidebar
+              isExpanded
                 ? [hasI18n && '_justify-end', '_border-t']
                 : '_py-4 _flex-wrap _justify-center',
               showToggleAnimation && [
                 '*:_opacity-0',
-                showSidebar
+                isExpanded
                   ? '*:_animate-[nextra-fadein_1s_ease_.2s_forwards]'
                   : '*:_animate-[nextra-fadein2_1s_ease_.2s_forwards]'
               ]
             )}
           >
             <LocaleSwitch
-              lite={!showSidebar}
-              className={showSidebar ? '_grow' : 'max-md:_grow'}
+              lite={!isExpanded}
+              className={isExpanded ? '_grow' : 'max-md:_grow'}
             />
             <ThemeSwitch
-              lite={!showSidebar || hasI18n}
-              className={!showSidebar || hasI18n ? '' : '_grow'}
+              lite={!isExpanded || hasI18n}
+              className={!isExpanded || hasI18n ? '' : '_grow'}
             />
             {themeConfig.sidebar.toggleButton && (
               <Button
-                title={showSidebar ? 'Hide sidebar' : 'Show sidebar'}
+                aria-expanded={isExpanded}
+                aria-controls={sidebarControlsId}
+                title={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
                 className={({ hover }) =>
                   cn(
                     '_rounded-md _p-2',
@@ -516,14 +511,14 @@ export function Sidebar({ toc }: { toc: Heading[] }): ReactElement {
                   )
                 }
                 onClick={() => {
-                  setSidebar(prev => !prev)
+                  setIsExpanded(prev => !prev)
                   setToggleAnimation(true)
                 }}
               >
                 <ExpandIcon
                   height="12"
                   className={cn(
-                    !showSidebar && 'first:*:_origin-[35%] first:*:_rotate-180'
+                    !isExpanded && 'first:*:_origin-[35%] first:*:_rotate-180'
                   )}
                 />
               </Button>

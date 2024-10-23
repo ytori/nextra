@@ -31,10 +31,9 @@ export const nextraConfigSchema = z.strictObject({
         codeblocks: z.boolean()
       })
     ])
-    .default({
-      codeblocks: false
-    }),
-  staticImage: z.boolean().default(true),
+    .default({ codeblocks: false })
+    .optional(),
+  staticImage: z.boolean().default(true).optional(),
   readingTime: z.boolean().optional(),
   latex: z
     .union([
@@ -49,16 +48,16 @@ export const nextraConfigSchema = z.strictObject({
       })
     ])
     .optional(),
-  codeHighlight: z.boolean().default(true),
+  codeHighlight: z.boolean().default(true).optional(),
   /**
    * A function to modify the `pageMap` passed to theme layouts.
    * @experimental
    */
-  transformPageMap:
-    z.custom<(pageMap: PageMapItem[], locale: string) => PageMapItem[]>(),
+  transformPageMap: z
+    .custom<(pageMap: PageMapItem[], locale: string) => PageMapItem[]>()
+    .optional(),
   mdxOptions: z
     .strictObject({
-      providerImportSource: z.string().optional(),
       rehypePlugins: z.custom<ProcessorOptions['rehypePlugins']>(),
       remarkPlugins: z.custom<ProcessorOptions['remarkPlugins']>(),
       recmaPlugins: z.custom<ProcessorOptions['recmaPlugins']>(),
@@ -66,7 +65,7 @@ export const nextraConfigSchema = z.strictObject({
       rehypePrettyCodeOptions: z.custom<RehypePrettyCodeOptions>().optional()
     })
     .optional(),
-  mdxBaseDir: z.string().optional()
+  useContentDir: z.boolean().optional()
 })
 
 export const pageThemeSchema = z.strictObject({

@@ -1,22 +1,22 @@
 'use client'
 
 import cn from 'clsx'
-import type { ReactElement, ReactNode } from 'react'
-import { useEffect, useRef } from 'react'
+import type { FC, ReactNode } from 'react'
+import { Children, useEffect, useMemo, useRef } from 'react'
 
-export function Collapse({
-  children,
-  isOpen,
-  horizontal = false,
-  openDuration = 500,
-  closeDuration = 300
-}: {
+export const Collapse: FC<{
   children: ReactNode
   isOpen: boolean
   horizontal?: boolean
   openDuration?: number
   closeDuration?: number
-}): ReactElement {
+}> = ({
+  children,
+  isOpen,
+  horizontal = false,
+  openDuration = 500,
+  closeDuration = 300
+}) => {
   const containerRef = useRef<HTMLDivElement>(null!)
   const initialOpen = useRef(isOpen)
   const animationRef = useRef(0)
@@ -60,7 +60,19 @@ export function Collapse({
   useEffect(() => {
     initialRender.current = false
   }, [])
-
+  // Add inner <div> only if children.length != 1
+  const newChildren = useMemo(
+    () =>
+      Children.count(children) === 1 &&
+      children &&
+      typeof children === 'object' &&
+      'type' in children ? (
+        children
+      ) : (
+        <div>{children}</div>
+      ),
+    [children]
+  )
   return (
     <div
       ref={containerRef}
@@ -73,7 +85,7 @@ export function Collapse({
         transitionDuration: (isOpen ? openDuration : closeDuration) + 'ms'
       }}
     >
-      <div>{children}</div>
+      {newChildren}
     </div>
   )
 }

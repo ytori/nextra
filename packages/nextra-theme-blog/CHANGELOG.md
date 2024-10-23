@@ -1,5 +1,91 @@
 # nextra-theme-blog
 
+## 4.0.0-app-router.12
+
+### Patch Changes
+
+- b8defc9: sync with nextra 3.1.0
+- Updated dependencies [b8defc9]
+- Updated dependencies [b8defc9]
+  - nextra@4.0.0-app-router.12
+
+## 4.0.0-app-router.11
+
+### Patch Changes
+
+- be15165: move `pagefind` output to `public/_pagefind` directory
+  https://github.com/shuding/nextra/pull/3517
+- Updated dependencies [be15165]
+  - nextra@4.0.0-app-router.11
+
+## 4.0.0-app-router.10
+
+### Patch Changes
+
+- 8b1a7c9: defer pagefind results update for prioritizing the user input state
+- Updated dependencies [8b1a7c9]
+  - nextra@4.0.0-app-router.10
+
+## 4.0.0-app-router.9
+
+### Patch Changes
+
+- 2c8a8ab: - sync with nextra 3.0.15
+
+  - bump to Next 15
+  - remove importing of `style.css` in themes, you need to import now manually
+    by
+
+  ```js
+  import 'nextra-theme-docs/style.css' // for docs theme
+  import 'nextra-theme-blog/style.css' // for blog theme
+  ```
+
+- Updated dependencies [2c8a8ab]
+  - nextra@4.0.0-app-router.9
+
+## 4.0.0-app-router.8
+
+### Patch Changes
+
+- 875842b: remove `react-cusdis` dependency, use
+  https://cusdis.com/doc#/advanced/sdk directly
+- 9832af9: add ↗ char for external links
+- ec39959: Use `primaryColor` for `::selection` styles
+- 875842b: support `GitHub Alert Syntax`
+- Updated dependencies [9832af9]
+- Updated dependencies [ec39959]
+- Updated dependencies [875842b]
+  - nextra@4.0.0-app-router.8
+
+## 4.0.0-app-router.7
+
+### Patch Changes
+
+- 5201e5f: add helpful error message about not available search on development
+  mode
+- 3ac2c32: add `getPageMap` helper function from `nextra/page-map`
+- b4ca36d: - allow override/add additional icons for code blocks
+  - remove `nextraConfig.mdxOptions.providerImportSource` option in favour of
+    `mdx-components` file
+- 4768dee: replace `nextraConfig.mdxBaseDir: string` by `useContentDir: boolean`
+- Updated dependencies [5201e5f]
+- Updated dependencies [3ac2c32]
+- Updated dependencies [b4ca36d]
+- Updated dependencies [4768dee]
+  - nextra@4.0.0-app-router.7
+
+## 4.0.0-app-router.6
+
+### Patch Changes
+
+- 2092d5e: enable page reload of catch-all routes `app/[[...slug]].jsx` on
+  content change
+- a97e5cf: sync with nextra 3.0.10
+- Updated dependencies [2092d5e]
+- Updated dependencies [a97e5cf]
+  - nextra@4.0.0-app-router.6
+
 ## 4.0.0-app-router.5
 
 ### Patch Changes
@@ -75,6 +161,108 @@
 
 - Updated dependencies [99f34d3]
   - nextra@4.0.0-app-router.0
+
+## 3.1.0
+
+### Patch Changes
+
+- Updated dependencies [035fe48]
+- Updated dependencies [8e9767e]
+- Updated dependencies [fec399a]
+- Updated dependencies [c002118]
+  - nextra@3.1.0
+
+## 3.1.0-canary.1
+
+### Patch Changes
+
+- Updated dependencies [035fe48]
+- Updated dependencies [8e9767e]
+- Updated dependencies [c002118]
+  - nextra@3.1.0-canary.1
+
+## 3.1.0-canary.0
+
+### Patch Changes
+
+- Updated dependencies [fec399a]
+  - nextra@3.1.0-canary.0
+
+## 3.0.15
+
+### Patch Changes
+
+- Updated dependencies [bd498c6]
+  - nextra@3.0.15
+
+## 3.0.14
+
+### Patch Changes
+
+- Updated dependencies [6454938]
+- Updated dependencies [9794e9e]
+- Updated dependencies [9794e9e]
+  - nextra@3.0.14
+
+## 3.0.13
+
+### Patch Changes
+
+- nextra@3.0.13
+
+## 3.0.12
+
+### Patch Changes
+
+- Updated dependencies [7e0093f]
+  - nextra@3.0.12
+
+## 3.0.11
+
+### Patch Changes
+
+- Updated dependencies [e0a9303]
+  - nextra@3.0.11
+
+## 3.0.10
+
+### Patch Changes
+
+- Updated dependencies [31de764]
+- Updated dependencies [161d350]
+  - nextra@3.0.10
+
+## 3.0.9
+
+### Patch Changes
+
+- Updated dependencies [f9cc160]
+  - nextra@3.0.9
+
+## 3.0.8
+
+### Patch Changes
+
+- nextra@3.0.8
+
+## 3.0.7
+
+### Patch Changes
+
+- Updated dependencies [4bbc1fe]
+  - nextra@3.0.7
+
+## 3.0.6
+
+### Patch Changes
+
+- nextra@3.0.6
+
+## 3.0.5
+
+### Patch Changes
+
+- nextra@3.0.5
 
 ## 3.0.4
 

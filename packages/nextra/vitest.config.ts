@@ -5,11 +5,17 @@ export default defineConfig({
   plugins: [react()],
   test: {
     globals: true,
-    environment: 'jsdom'
+    environment: 'jsdom',
+    testTimeout: 10_000
   },
   server: {
     watch: {
-      ignored: ['**/node_modules/**', '**/dist/**', '**/generated-*']
+      ignored: [
+        '**/node_modules/**',
+        '**/dist/**',
+        // Otherwise vitest will infinity re-run in watch mode
+        '**/generated-*'
+      ]
     }
   }
 })

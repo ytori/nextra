@@ -7,8 +7,9 @@ declare module '*.mdx' {
   export default ReactComponent
 }
 
-declare module '.next/static/chunks/nextra-page-map-*.mjs' {
-  import type { PageMapItem } from 'nextra'
-  export const RouteToFilepath: Record<string, string>
-  export const pageMap: PageMapItem[]
+declare module '*.svg?svgr' {
+  import type { FC, SVGProps } from 'react'
+  const ReactComponent: FC<SVGProps<SVGElement>>
+
+  export default ReactComponent
 }

@@ -1,8 +1,9 @@
-import { useMDXComponents } from 'nextra-theme-docs'
 import type { FC, ReactNode } from 'react'
+import { useMDXComponents } from '../mdx-components'
 
 export const Table: FC<{ children: ReactNode }> = ({ children }) => {
   const { table: Table, tr: Tr, th: Th } = useMDXComponents()
+
   return (
     <Table className="w-full !table text-sm">
       <thead>

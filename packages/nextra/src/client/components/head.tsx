@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from 'react'
+import type { FC, ReactNode } from 'react'
 import { z } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
@@ -57,7 +57,7 @@ type HeadProps = Partial<z.infer<typeof headSchema>> & {
   children?: ReactNode
 }
 
-export function Head({ children, ...props }: HeadProps): ReactElement {
+const _Head: FC<HeadProps> = ({ children, ...props }) => {
   const { data, error } = headSchema.safeParse(props)
   if (error) {
     throw fromZodError(error)
@@ -68,7 +68,25 @@ export function Head({ children, ...props }: HeadProps): ReactElement {
   return (
     <head>
       {children}
-      <style>{`:root{--nextra-primary-hue:${color.hue.light}deg;--nextra-primary-saturation:${color.saturation.light}%;--nextra-bg:${backgroundColor.light};}.dark{--nextra-primary-hue:${color.hue.dark}deg;--nextra-primary-saturation:${color.saturation.dark}%;--nextra-bg:${backgroundColor.dark};}`}</style>
+      <style>{`
+        :root {
+          --nextra-primary-hue: ${color.hue.light}deg;
+          --nextra-primary-saturation: ${color.saturation.light}%;
+          --nextra-bg: ${backgroundColor.light};
+        }
+        .dark {
+          --nextra-primary-hue: ${color.hue.dark}deg;
+          --nextra-primary-saturation: ${color.saturation.dark}%;
+          --nextra-bg: ${backgroundColor.dark};
+        }
+        ::selection {
+          background: ${makePrimaryColor(86)};
+        }
+
+        .dark ::selection {
+          background: ${makePrimaryColor(24)};
+        }
+      `}</style>
       {faviconGlyph && (
         <link
           rel="icon"
@@ -79,9 +97,15 @@ export function Head({ children, ...props }: HeadProps): ReactElement {
   )
 }
 
-Head.viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fff' },
-    { media: '(prefers-color-scheme: dark)', color: '#111' }
-  ]
+function makePrimaryColor(l: number) {
+  return `hsl(var(--nextra-primary-hue) var(--nextra-primary-saturation) ${l}%)`
 }
+
+export const Head = Object.assign(_Head, {
+  viewport: {
+    themeColor: [
+      { media: '(prefers-color-scheme: light)', color: '#fff' },
+      { media: '(prefers-color-scheme: dark)', color: '#111' }
+    ]
+  }
+})

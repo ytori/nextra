@@ -1,47 +1,26 @@
-/* eslint-env node */
 /* eslint-disable react-hooks/rules-of-hooks -- false positive, useMDXComponents/useTOC are not react hooks */
 
-import { notFound } from 'next/navigation'
 import { useMDXComponents } from 'nextra-theme-docs'
+import { generateStaticParamsFor, importPage } from 'nextra/pages'
 
-export async function generateStaticParams() {
-  const { RouteToFilepath } = await import(
-    '../../.next/static/chunks/nextra-page-map-.mjs'
-  )
-  return Object.keys(RouteToFilepath).map(mdxPath => ({
-    mdxPath: mdxPath.split('/')
-  }))
-}
+export const generateStaticParams = generateStaticParamsFor('mdxPath')
 
-export async function generateMetadata({ params: { mdxPath } }) {
-  const { metadata } = await loadPage(mdxPath)
+export async function generateMetadata(props) {
+  const params = await props.params
+  const { metadata } = await importPage(params.mdxPath)
   return metadata
 }
 
-export default async function Page({ params: { mdxPath } }) {
-  const {
-    default: MDXContent,
-    useTOC,
-    metadata,
-    title
-  } = await loadPage(mdxPath)
+export default async function Page(props) {
+  const params = await props.params
+  const result = await importPage(params.mdxPath)
+  const { default: MDXContent, useTOC, metadata, title } = result
 
-  const { wrapper: Wrapper } = useMDXComponents()
+  const Wrapper = useMDXComponents().wrapper
 
   return (
     <Wrapper toc={useTOC()} metadata={metadata} title={title}>
-      <MDXContent />
+      <MDXContent {...props} params={params} />
     </Wrapper>
   )
-}
-
-async function loadPage(mdxPath = []) {
-  const { RouteToFilepath } = await import(
-    '../../.next/static/chunks/nextra-page-map-.mjs'
-  )
-  try {
-    return await import(`../../mdx/${RouteToFilepath[mdxPath.join('/')]}`)
-  } catch {
-    notFound()
-  }
 }

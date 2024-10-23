@@ -3,25 +3,23 @@ import cn from 'clsx'
 import NextLink from 'next/link'
 import { ArrowRightIcon } from 'nextra/icons'
 import type { Item } from 'nextra/normalize-pages'
-import type { ReactElement } from 'react'
+import type { FC } from 'react'
 import { Fragment } from 'react'
 
-export function Breadcrumb({
-  activePath
-}: {
+export const Breadcrumb: FC<{
   activePath: Item[]
-}): ReactElement {
+}> = ({ activePath }) => {
   return (
     <div className="nextra-breadcrumb _mt-1.5 _flex _items-center _gap-1 _overflow-hidden _text-sm _text-gray-500 dark:_text-gray-400 contrast-more:_text-current">
-      {activePath.map((item, index) => {
-        const isLast = index === activePath.length - 1
-        const href = isLast
-          ? ''
-          : item.withIndexPage
+      {activePath.map((item, index, arr) => {
+        const nextItem = arr[index + 1]
+        const href = nextItem
+          ? 'frontMatter' in item
             ? item.route
-            : item.children![0].route === activePath.at(index + 1)?.route
+            : item.children[0].route === nextItem.route
               ? ''
-              : item.children![0].route
+              : item.children[0].route
+          : ''
 
         const ComponentToUse = href ? NextLink : 'span'
 
@@ -36,9 +34,9 @@ export function Breadcrumb({
             <ComponentToUse
               className={cn(
                 '_whitespace-nowrap _transition-colors',
-                isLast
-                  ? '_font-medium _text-gray-700 contrast-more:_font-bold contrast-more:_text-current dark:_text-gray-100 contrast-more:dark:_text-current'
-                  : '_min-w-6 _overflow-hidden _text-ellipsis',
+                nextItem
+                  ? '_min-w-6 _overflow-hidden _text-ellipsis'
+                  : '_font-medium _text-gray-700 contrast-more:_font-bold contrast-more:_text-current dark:_text-gray-100 contrast-more:dark:_text-current',
                 href &&
                   'focus-visible:nextra-focus _ring-inset hover:_text-gray-900 dark:hover:_text-gray-100'
               )}

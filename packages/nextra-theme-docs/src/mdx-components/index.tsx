@@ -1,35 +1,57 @@
 import cn from 'clsx'
 import {
+  Callout,
   Code,
   Details,
   Pre,
+  SkipNavContent,
   Summary,
   Table,
   Td,
   Th,
   Tr,
+  withGitHubAlert,
   withIcons
 } from 'nextra/components'
+import { useMDXComponents as getNextraMDXComponents } from 'nextra/mdx'
 import type { MDXComponents } from 'nextra/mdx'
-import { DEFAULT_COMPONENTS } from 'nextra/mdx'
+import { removeLinks } from 'nextra/remove-links'
+import type { ComponentProps, FC } from 'react'
+import { Sidebar } from '../components'
 import { H1, H2, H3, H4, H5, H6 } from './heading'
 import { Link } from './link'
-import { Wrapper } from './wrapper'
+import { ClientWrapper } from './wrapper.client'
+
+const Blockquote: FC<ComponentProps<'blockquote'>> = props => (
+  <blockquote
+    className={cn(
+      '[&:not(:first-child)]:_mt-6 _border-gray-300 _italic _text-gray-700 dark:_border-gray-700 dark:_text-gray-400',
+      '_border-s-2 _ps-6'
+    )}
+    {...props}
+  />
+)
+
+const DEFAULT_COMPONENTS = getNextraMDXComponents()
 
 /* eslint sort-keys: error */
-export function useMDXComponents(components?: any) {
-  return {
+export const useMDXComponents = (components?: Readonly<MDXComponents>) =>
+  ({
     ...DEFAULT_COMPONENTS,
     a: Link,
-    blockquote: props => (
-      <blockquote
-        className={cn(
-          '[&:not(:first-child)]:_mt-6 _border-gray-300 _italic _text-gray-700 dark:_border-gray-700 dark:_text-gray-400',
-          '_border-s-2 _ps-6'
-        )}
-        {...props}
-      />
-    ),
+    blockquote: withGitHubAlert(({ type, ...props }) => {
+      const calloutType = (
+        {
+          caution: 'error',
+          important: 'error', // TODO
+          note: 'info',
+          tip: 'default',
+          warning: 'warning'
+        } as const
+      )[type]
+
+      return <Callout type={calloutType} {...props} />
+    }, Blockquote),
     code: Code,
     details: Details,
     h1: H1,
@@ -74,7 +96,28 @@ export function useMDXComponents(components?: any) {
         {...props}
       />
     ),
-    wrapper: Wrapper,
+    wrapper({ toc, children, ...props }) {
+      // @ts-expect-error fixme
+      toc = toc.map(item => ({
+        ...item,
+        value: removeLinks(item.value)
+      }))
+      return (
+        <div className="_mx-auto _flex _max-w-[90rem]">
+          <Sidebar toc={toc} />
+
+          <ClientWrapper toc={toc} {...props}>
+            <SkipNavContent />
+            <main
+              data-pagefind-body={
+                (props.metadata as any).searchable !== false || undefined
+              }
+            >
+              {children}
+            </main>
+          </ClientWrapper>
+        </div>
+      )
+    },
     ...components
-  } satisfies MDXComponents
-}
+  }) satisfies MDXComponents

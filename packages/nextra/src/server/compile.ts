@@ -1,8 +1,6 @@
 import path from 'node:path'
 import type { ProcessorOptions } from '@mdx-js/mdx'
 import { createProcessor } from '@mdx-js/mdx'
-import type { Processor } from '@mdx-js/mdx/lib/core'
-import { rendererRich, transformerTwoslash } from '@shikijs/twoslash'
 import { remarkMermaid } from '@theguild/remark-mermaid'
 import { remarkNpm2Yarn } from '@theguild/remark-npm2yarn'
 import type { Program } from 'estree'
@@ -16,7 +14,7 @@ import remarkReadingTime from 'remark-reading-time'
 import remarkSmartypants from 'remark-smartypants'
 import type { Pluggable, Plugin } from 'unified'
 import type { FrontMatter, LoaderOptions, ReadingTime } from '../types'
-import { CWD, MARKDOWN_URL_EXTENSION_REGEX } from './constants.js'
+import { CWD, MARKDOWN_URL_EXTENSION_RE } from './constants.js'
 import {
   recmaRewriteFunctionBody,
   recmaRewriteJsx
@@ -40,8 +38,10 @@ import {
 } from './remark-plugins/index.js'
 import { logger } from './utils.js'
 
+type Processor = ReturnType<typeof createProcessor>
+
 const cachedCompilerForFormat: Record<
-  Exclude<ProcessorOptions['format'], undefined | null>,
+  NonNullable<ProcessorOptions['format']>,
   Processor
 > = Object.create(null)
 
@@ -77,12 +77,16 @@ export async function compileMdx(
     useCachedCompiler,
     isPageImport = true
   }: Partial<CompileMdxOptions> = {}
-) {
+): Promise<{
+  result: string
+  title?: string
+  readingTime?: ReadingTime
+  frontMatter: FrontMatter
+}> {
   const {
     jsx = false,
     format: _format = 'mdx',
     outputFormat = 'function-body',
-    providerImportSource = 'nextra/mdx',
     remarkPlugins,
     rehypePlugins,
     recmaPlugins,
@@ -152,7 +156,7 @@ export async function compileMdx(
       jsx,
       format,
       outputFormat,
-      providerImportSource,
+      providerImportSource: 'next-mdx-import-source-file',
       // Fix TypeError: _jsx is not a function for remote content
       development: process.env.NODE_ENV === 'development',
       remarkPlugins: [
@@ -168,7 +172,7 @@ export async function compileMdx(
         ] satisfies Pluggable,
         isRemoteContent && remarkRemoveImports,
         remarkFrontmatter, // parse and attach yaml node
-        [remarkMdxFrontMatter] satisfies Pluggable,
+        remarkMdxFrontMatter,
         remarkGfm,
         format !== 'md' &&
           ([
@@ -186,7 +190,7 @@ export async function compileMdx(
         [
           remarkLinkRewrite,
           {
-            pattern: MARKDOWN_URL_EXTENSION_REGEX,
+            pattern: MARKDOWN_URL_EXTENSION_RE,
             replace: '',
             excludeExternalLinks: true
           }
@@ -218,16 +222,6 @@ export async function compileMdx(
                 rehypePrettyCode,
                 {
                   ...DEFAULT_REHYPE_PRETTY_CODE_OPTIONS,
-                  // TODO: For some reason I get Error: Cannot find module 'path' in remote content,
-                  // disable twoslash temporarily
-                  transformers: isRemoteContent
-                    ? []
-                    : [
-                        transformerTwoslash({
-                          renderer: rendererRich(),
-                          explicitTrigger: true
-                        })
-                      ],
                   ...rehypePrettyCodeOptions
                 }
               ] as any,
@@ -236,6 +230,7 @@ export async function compileMdx(
         [rehypeExtractTocContent, { isRemoteContent }]
       ].filter(v => !!v),
       recmaPlugins: [
+        ...(recmaPlugins || []),
         (() => (ast: Program, file) => {
           const mdxContentIndex = ast.body.findIndex(node => {
             if (node.type === 'ExportDefaultDeclaration') {
@@ -284,8 +279,7 @@ export async function compileMdx(
           //   }
           // }
         }) satisfies Plugin<[], Program>,
-        isRemoteContent ? recmaRewriteFunctionBody : recmaRewriteJsx,
-        ...(recmaPlugins || [])
+        isRemoteContent ? recmaRewriteFunctionBody : recmaRewriteJsx
       ].filter(v => !!v)
     })
   }

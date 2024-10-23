@@ -5,11 +5,12 @@ import {
   Footer,
   LastUpdated,
   Layout,
+  Link,
   LocaleSwitch,
   Navbar
 } from 'nextra-theme-docs'
 import { Banner, Head } from 'nextra/components'
-import { normalizePageMap } from 'nextra/page-map'
+import { getPageMap, normalizePageMap } from 'nextra/page-map'
 import { getDictionary, getDirection } from '../_dictionaries/get-dictionary'
 import { pageMap as graphqlEslintPageMap } from './remote/graphql-eslint/[[...slug]]/page'
 import { pageMap as graphqlYogaPageMap } from './remote/graphql-yoga/[[...slug]]/page'
@@ -41,12 +42,10 @@ export const metadata: Metadata = {
   }
 }
 
-export default async function RootLayout({ children, params: { lang } }) {
+export default async function RootLayout({ children, params }) {
+  const { lang } = await params
   const dictionary = await getDictionary(lang)
-
-  let { pageMap } = await import(
-    `.next/static/chunks/nextra-page-map-${lang}.mjs`
-  )
+  let pageMap = await getPageMap(lang)
 
   if (lang === 'en') {
     pageMap = [
@@ -62,6 +61,10 @@ export default async function RootLayout({ children, params: { lang } }) {
         backgroundColor={{
           dark: 'rgb(15,23,42)',
           light: 'rgb(254, 252, 232)'
+        }}
+        color={{
+          hue: { dark: 120, light: 0 },
+          saturation: { dark: 100, light: 100 }
         }}
       />
       <body>
@@ -92,7 +95,9 @@ export default async function RootLayout({ children, params: { lang } }) {
             system: dictionary.system
           }}
         >
-          <Banner storageKey="swr-2">SWR 2.0 is out! Read more →</Banner>
+          <Banner storageKey="swr-2">
+            SWR 2.0 is out! <Link href="#">Read more →</Link>
+          </Banner>
           <Navbar
             logo={
               <>

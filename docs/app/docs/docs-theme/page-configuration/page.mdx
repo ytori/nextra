@@ -1,3 +1,7 @@
+import { Screenshot } from 'components/screenshot'
+import { Video } from 'components/video'
+import { Callout, FileTree } from 'nextra/components'
+
 # Page Configuration
 
 In Nextra, the site and page structure can be configured via the co-located
@@ -6,10 +10,6 @@ customize it further.
 
 Those configurations affect the overall layout of the theme, especially the
 navigation bar and the sidebar.
-
-import { Screenshot } from 'components/screenshot'
-import { Video } from 'components/video'
-import { Callout, FileTree } from 'nextra/components'
 
 <Callout>
   Read more about Nextra's `_meta.js` files
@@ -44,7 +44,7 @@ export default {
 <Callout>
   If any routes are not listed in the `_meta.js` file, they will be appended to
   the end of the sidebar and sorted alphabetically, and the title will be
-  formatted with [Title](https://title.sh).
+  formatted with [Title](https://title.sh) based on filename.
 </Callout>
 
 ## Folders
@@ -231,8 +231,8 @@ And it will look like this:
 <Video src="/assets/docs/sub-docs.mp4" />
 
 <div className="mt-4 text-center text-sm">
-  [Live example on StackBlitz
-  ↗](https://stackblitz.com/edit/nextra-2-docs-eszspq?file=pages%2F_meta.js)
+  [Live example on
+  StackBlitz](https://stackblitz.com/edit/nextra-2-docs-eszspq?file=pages%2F_meta.js)
 </div>
 
 You can also hide links like `Home` from the navbar with the
@@ -243,13 +243,11 @@ You can also hide links like `Home` from the navbar with the
 You can also add menus to the navbar using `"type": "menu"` and the `"items"`
 option:
 
-<Screenshot>
-  <>![Navbar menu](/assets/docs/menu.png)</>
-</Screenshot>
+<Screenshot>![Navbar menu](/assets/docs/menu.png)</Screenshot>
 
 <div className="mt-8 text-center text-sm">
-  [Live example on StackBlitz
-  ↗](https://stackblitz.com/edit/nextra-2-docs-2qopvp?file=pages%2F_meta.js)
+  [Live example on
+  StackBlitz](https://stackblitz.com/edit/nextra-2-docs-2qopvp?file=pages%2F_meta.js)
 </div>
 
 ```js filename="pages/_meta.js"
@@ -401,6 +399,6 @@ export default {
 ```
 
 <div className="mt-4 text-center text-sm">
-  [Live example on StackBlitz
-  ↗](https://stackblitz.com/edit/nextra-2-docs-hg77h3?file=pages%2F_meta.js,pages%2Findex.mdx)
+  [Live example on
+  StackBlitz](https://stackblitz.com/edit/nextra-2-docs-hg77h3?file=pages%2F_meta.js,pages%2Findex.mdx)
 </div>

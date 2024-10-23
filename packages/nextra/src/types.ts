@@ -97,7 +97,7 @@ export type MDXWrapper = FC<
   } & PageOpts
 >
 
-export type UseTOC = (props: Record<string, any>) => Heading[]
+export type UseTOC = (props?: Record<string, any>) => Heading[]
 
 export type NextraInternalGlobal = typeof globalThis & {
   [NEXTRA_INTERNAL]: {
@@ -114,5 +114,3 @@ export type NextraInternalGlobal = typeof globalThis & {
     themeConfig?: ThemeConfig
   }
 }
-
-export type DynamicMetaDescriptor = Record<string, () => any>

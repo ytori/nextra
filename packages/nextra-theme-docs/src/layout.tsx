@@ -23,7 +23,7 @@ const theme = z.strictObject({
   editLink: stringOrElement.default('Edit this page'),
   feedback: z
     .strictObject({
-      content: stringOrElement.default('Question? Give us feedback →'),
+      content: stringOrElement.default('Question? Give us feedback'),
       labels: z.string().default('feedback')
     })
     .default({}),
@@ -97,7 +97,7 @@ const hasTypeOf = (child: unknown, ComponentOf: FC) =>
   'type' in child &&
   child.type === ComponentOf
 
-export function Layout({ children, ...themeConfig }: Props): ReactElement {
+export const Layout: FC<Props> = ({ children, ...themeConfig }) => {
   const { data, error } = theme.safeParse(themeConfig)
   if (error) {
     throw fromZodError(error)
@@ -106,10 +106,12 @@ export function Layout({ children, ...themeConfig }: Props): ReactElement {
   const newChildren = Children.toArray(children)
 
   if (!newChildren.some(child => hasTypeOf(child, Navbar))) {
-    newChildren.unshift(<Navbar />)
+    newChildren.unshift(<Navbar key={0} />)
   }
   if (!newChildren.some(child => hasTypeOf(child, Footer))) {
-    newChildren.push(<Footer>MIT {new Date().getFullYear()} © Nextra.</Footer>)
+    newChildren.push(
+      <Footer key={1}>MIT {new Date().getFullYear()} © Nextra.</Footer>
+    )
   }
 
   return (

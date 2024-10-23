@@ -9,8 +9,14 @@ import {
 import cn from 'clsx'
 import NextLink from 'next/link'
 import { useRouter } from 'next/navigation'
-import type { FocusEventHandler, ReactElement, SyntheticEvent } from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import type { FC, FocusEventHandler, ReactElement, SyntheticEvent } from 'react'
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useRef,
+  useState
+} from 'react'
 import { useMounted } from '../hooks/index.js'
 import { InformationCircleIcon, SpinnerIcon } from '../icons/index.js'
 
@@ -38,45 +44,63 @@ type SearchProps = {
 
 const INPUTS = new Set(['input', 'select', 'button', 'textarea'])
 
-export function Search({
+const DEV_SEARCH_NOTICE = (
+  <>
+    <p>
+      Search isn&apos;t available in development because Nextra&nbsp;4 uses
+      Pagefind package, which indexes built `.html` files instead of
+      `.md`/`.mdx`.
+    </p>
+    <p className="_mt-2">
+      To test search during development, run `next build` and then restart your
+      app with `next dev`.
+    </p>
+  </>
+)
+
+export const Search: FC<SearchProps> = ({
   className,
-  emptyResult = (
-    <span className="_block _select-none _p-8 _text-center _text-sm _text-gray-400">
-      No results found.
-    </span>
-  ),
+  emptyResult = 'No results found.',
   errorText = 'Failed to load search index.',
   loading = 'Loading…',
   placeholder = 'Search documentation…'
-}: SearchProps): ReactElement {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<Error | null>(null)
+}) => {
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<ReactElement | string>('')
   const [results, setResults] = useState<PagefindResult[]>([])
   const [search, setSearch] = useState('')
+  // https://github.com/shuding/nextra/pull/3514
+  // defer pagefind results update for prioritizing user input state
+  const deferredSearch = useDeferredValue(search)
 
-  const onChange = useCallback(async (value: string) => {
-    setSearch(value)
-
+  const handleSearch = useCallback(async (value: string) => {
     if (!value) {
       setResults([])
-      setError(null)
+      setError('')
       return
     }
 
     if (!window.pagefind) {
       setIsLoading(true)
-      setError(null)
+      setError('')
       try {
         window.pagefind = await import(
           // @ts-expect-error pagefind.js generated after build
-          /* webpackIgnore: true */ './pagefind/pagefind.js'
+          /* webpackIgnore: true */ '/_pagefind/pagefind.js'
         )
         await window.pagefind.options({
           baseUrl: '/'
           // ... more search options
         })
       } catch (error) {
-        setError(error as Error)
+        const message =
+          error instanceof Error
+            ? process.env.NODE_ENV !== 'production' &&
+              error.message.includes('Failed to fetch')
+              ? DEV_SEARCH_NOTICE // This error will be tree-shaked in production
+              : `${error.constructor.name}: ${error.message}`
+            : String(error)
+        setError(message)
         setIsLoading(false)
         return
       }
@@ -96,6 +120,10 @@ export function Search({
     )
     setIsLoading(false)
   }, [])
+
+  useEffect(() => {
+    handleSearch(deferredSearch)
+  }, [handleSearch, deferredSearch])
 
   const router = useRouter()
   const [focused, setFocused] = useState(false)
@@ -160,22 +188,21 @@ export function Search({
   const handleChange = useCallback(
     (event: SyntheticEvent<HTMLInputElement>) => {
       const { value } = event.currentTarget
-      onChange(value)
+      setSearch(value)
     },
-    [onChange]
+    []
   )
 
   const handleSelect = useCallback(
-    async (searchResult: PagefindResult | null) => {
+    (searchResult: PagefindResult | null) => {
       if (!searchResult) return
       // Calling before navigation so selector `html:not(:has(*:focus))` in styles.css will work,
       // and we'll have padding top since input is not focused
       inputRef.current?.blur()
-      await router.push(searchResult.url)
-      // Clear input after navigation completes
-      onChange('')
+      router.push(searchResult.url)
+      setSearch('')
     },
-    [router, onChange]
+    [router]
   )
 
   return (
@@ -220,6 +247,7 @@ export function Search({
         anchor={{ to: 'top end', gap: 10, padding: 16 }}
         className={({ open }) =>
           cn(
+            'nextra-search-results', // for user styling
             'nextra-scrollbar max-md:_h-full',
             '_border _border-gray-200 _text-gray-100 dark:_border-neutral-800',
             '_z-20 _rounded-xl _py-2.5 _shadow-xl',
@@ -228,7 +256,12 @@ export function Search({
             'motion-reduce:_transition-none _transition-opacity',
             open ? '_opacity-100' : '_opacity-0',
             error || isLoading || !results.length
-              ? 'md:_h-[100px]'
+              ? [
+                  'md:_min-h-28 _grow _flex _justify-center _text-sm _gap-2 _px-8',
+                  error
+                    ? '_text-red-500 _items-start'
+                    : '_text-gray-400 _items-center'
+                ]
               : // headlessui adds max-height as style, use !important to override
                 'md:!_max-h-[min(calc(100vh-5rem),400px)]',
             '_w-full md:_w-[576px]',
@@ -237,30 +270,31 @@ export function Search({
         }
       >
         {error ? (
-          <div className="_h-full _flex _items-center _justify-center _gap-2 _px-8 _text-sm _text-red-500">
+          <>
             <InformationCircleIcon height="20" className="_shrink-0" />
-            {errorText}
-            <br />
-            {error.constructor.name}: {error.message}
-          </div>
+            <div className="_grid">
+              <b className="_mb-2">{errorText}</b>
+              {error}
+            </div>
+          </>
         ) : isLoading ? (
-          <div className="_h-full _flex _items-center _justify-center _gap-2 _px-8 _text-sm _text-gray-400">
+          <>
             <SpinnerIcon height="20" className="_shrink-0 _animate-spin" />
             {loading}
-          </div>
+          </>
         ) : results.length ? (
           results.map(searchResult => (
             <Result key={searchResult.url} data={searchResult} />
           ))
         ) : (
-          search && emptyResult
+          deferredSearch && emptyResult
         )}
       </ComboboxOptions>
     </Combobox>
   )
 }
 
-function Result({ data }: { data: PagefindResult }) {
+const Result: FC<{ data: PagefindResult }> = ({ data }) => {
   return (
     <>
       <div

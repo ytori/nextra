@@ -2,9 +2,11 @@ import { NextraLogo, VercelLogo } from '@components/icons'
 import type { Metadata, Viewport } from 'next'
 import { Footer, Layout, Link, Navbar } from 'nextra-theme-docs'
 import { Banner, Head } from 'nextra/components'
-import type { ReactNode } from 'react'
+import { getPageMap } from 'nextra/page-map'
+import type { FC, ReactNode } from 'react'
 import './globals.css'
 import cn from 'clsx'
+import 'nextra-theme-docs/style.css'
 
 export const viewport: Viewport = Head.viewport
 
@@ -51,19 +53,29 @@ export const metadata: Metadata = {
   }
 }
 
-export default async function RootLayout({
-  children
-}: {
+const RootLayout: FC<{
   children: ReactNode
-}) {
-  const { pageMap } = await import('.next/static/chunks/nextra-page-map-.mjs')
-
+}> = async ({ children }) => {
+  const logo = (
+    <NextraLogo
+      height="20"
+      className={cn(
+        '[mask-position:0] [mask-size:400%] [mask-image:linear-gradient(60deg,#000_25%,rgba(0,0,0,.2)_50%,#000_75%)]',
+        'hover:[mask-position:100%] hover:[transition:mask-position_1s_ease]'
+      )}
+    />
+  )
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning>
+    <html
+      lang="en"
+      dir="ltr"
+      suppressHydrationWarning
+      className="nextra-scrollbar"
+    >
       <Head />
       <body>
         <Layout
-          pageMap={pageMap}
+          pageMap={await getPageMap()}
           docsRepositoryBase="https://github.com/shuding/nextra/tree/main/docs"
           editLink="Edit this page on GitHub →"
           sidebar={{ defaultMenuCollapseLevel: 1 }}
@@ -71,26 +83,12 @@ export default async function RootLayout({
           <Banner storageKey="4.0-release">
             <div className='before:content-["🎉_"]'>
               Nextra 4.0 is released.{' '}
-              <Link
-                href="https://the-guild.dev/blog/nextra-3"
-                className='after:content-["_→"]'
-              >
+              <Link href="#" className='after:content-["_→"]'>
                 Read more
               </Link>
             </div>
           </Banner>
-          <Navbar
-            logo={
-              <NextraLogo
-                height="20"
-                className={cn(
-                  '[mask-position:0] [mask-size:400%] [mask-image:linear-gradient(60deg,#000_25%,rgba(0,0,0,.2)_50%,#000_75%)]',
-                  'hover:[mask-position:100%] hover:[transition:mask-position_1s_ease]'
-                )}
-              />
-            }
-            projectLink="https://github.com/shuding/nextra"
-          />
+          <Navbar logo={logo} projectLink="https://github.com/shuding/nextra" />
           {children}
           <Footer className="flex-col items-center md:items-start">
             <a
@@ -112,3 +110,5 @@ export default async function RootLayout({
     </html>
   )
 }
+
+export default RootLayout
